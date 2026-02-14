@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "salt": "862545b4e32d71032bf126fa1240bf1c",
+  "entries": [
+    {
+      "domain": "github.com",
+      "username": "yamin",
+      "encrypted_password": "b06d9efc3c74ac999d78cd57b1e8388639f36050a72f279847d3fbc83988e74f87afae0d12102f0c94ad"
+    },
+    {
+      "domain": "youtube.com",
+      "username": "chowlaw",
+      "encrypted_password": "7b124840b3ee45f076347ea6ab61fac13f1e826f9d38ab3549f6eeeaaec6fa71d442c408bd002af53aacfa"
+    },
+    {
+      "domain": "qwen.ai",
+      "username": "abdellah",
+      "encrypted_password": "18417455c95776a014c68873b6e93db46d7f3ca258b3ab281b9d3fe3eba3094f0e60"
+    }
+  ]
+}
