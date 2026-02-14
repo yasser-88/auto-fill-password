@@ -3,16 +3,23 @@ import os
 from time import sleep
 import pyperclip
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout,
+    QWidget, QVBoxLayout, QHBoxLayout, QApplication, QStyle,
     QLabel, QLineEdit, QPushButton, QTableWidget, QTableWidgetItem,
-    QHeaderView, QMessageBox
+    QHeaderView, QMessageBox, QMainWindow
 )
-from PySide6.QtCore import Qt, QObject, Signal , QTimer
-from PySide6.QtGui import QFont
-from crypto import load_vault
+from PySide6.QtCore import Qt, QObject, Signal , QTimer,QSize
+from PySide6.QtGui import QFont, QIcon
+from crypto import load_vault ,create_vault
+
 
 
 VAULT_FILE = "vault.json"
+# Window size constants
+LOGIN_WINDOW_WIDTH = 250
+LOGIN_WINDOW_HEIGHT = 350
+VAULT_WINDOW_WIDTH = 600
+VAULT_WINDOW_HEIGHT = 400
+
 STYLESHEET = """
     QMainWindow, QWidget {
         background-color: #000000;
@@ -88,8 +95,8 @@ def find_password_for_domain(domain, key: str):
         return None
 
 def try_unlock(self, domain=None):
-    master_key = self.key_input.text().strip()
-    if not master_key:
+    self.master_key = self.key_input.text().strip()
+    if not self.master_key:
         self.error_label.setText("Please enter a key.")
         return
 
@@ -99,11 +106,12 @@ def try_unlock(self, domain=None):
 
     try:
         with open(VAULT_FILE, "rb") as f:
-            entries = load_vault(f.read(), master_key)
+            entries = load_vault(f.read(), self.master_key)
         if (self.__class__.__name__=="MainView"):
-            self.show_vault_table(entries)
+            self.bool=False
+            self.show_vault_table(entries,self.main_window)
         else:
-            password = find_password_for_domain(domain, master_key)
+            password = find_password_for_domain(domain, self.master_key)
             if password:
                 pyperclip.copy(password)
                 print(f"✅ Copied password for {domain}!")
@@ -112,7 +120,7 @@ def try_unlock(self, domain=None):
                 success_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 success_label.setFont(QFont("Consolas", 24, QFont.Weight.Bold))
                 self.main_layout.addWidget(success_label)
-                QTimer.singleShot(2000, lambda: self.main_window.setCentralWidget(MainView()))
+                QTimer.singleShot(2000, lambda: self.main_window.setCentralWidget(MainView(self.main_window)))
             else:
                 print("❌ No password found.")
                 clear_layout(self.main_layout)
@@ -120,7 +128,7 @@ def try_unlock(self, domain=None):
                 error_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 error_label.setFont(QFont("Consolas", 24, QFont.Weight.Bold))
                 self.main_layout.addWidget(error_label)
-                QTimer.singleShot(2000, lambda: self.main_window.setCentralWidget(MainView()))
+                QTimer.singleShot(2000, lambda: self.main_window.setCentralWidget(MainView(self.main_window)))
 
                 
     except Exception:
@@ -128,64 +136,105 @@ def try_unlock(self, domain=None):
         self.key_input.clear()
         self.key_input.setFocus()
 
+def new_login(self):
+    domain = self.domain_input.text().strip()
+    username = self.username_input.text().strip() == None
+    password = self.key_input.text().strip()
+    if not domain or not password:
+        self.error_label.setText("Please fill in password and domain.")
+        return
+    self.entries.append({
+        "domain": domain,
+        "username": username if username else "--non added--",
+        "password": password
+    })
+    try:
+        vault_bytes = create_vault(self.master_key, self.entries)
+        with open(VAULT_FILE, "wb") as f:
+            f.write(vault_bytes)
+            print("✅ Login saved!")
+    except Exception as e:
+        print(f"❌ Save failed: {e}")
+    self.bool=False
+    self.show_vault_table(self.entries,self.main_window)
+
+
+    
+
 class MainView(QWidget):
-    def __init__(self):
+    def __init__(self, main_window):
         super().__init__()
+        self.main_window = main_window
         self.main_layout = QVBoxLayout(self)
-        self.main_layout.setContentsMargins(30, 30, 30, 30)
+        self.main_layout.setContentsMargins(4, 4, 4, 4)
         self.main_layout.setSpacing(15)
         self.show_login_screen()
+        self.bool=False
+
 
     def show_login_screen(self):
         clear_layout(self.main_layout)
+        self.main_window.resize(LOGIN_WINDOW_WIDTH, LOGIN_WINDOW_HEIGHT)
+        self.main_layout.addSpacing(20)
         title = QLabel("Password Manager")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        title.setFont(QFont("Consolas", 24, QFont.Weight.Bold))
+        title.setFont(QFont("Consolas", 20, QFont.Weight.Bold))
         self.main_layout.addWidget(title)
-
-        self.main_layout.addSpacing(20)
+        self.sec_layout = QVBoxLayout()
+        self.sec_layout.setContentsMargins(30, 30, 30, 15)
+        self.sec_layout.setSpacing(15)
 
         key_label = QLabel("Enter Master Key:")
-        key_label.setFont(QFont("Consolas", 14))
-        self.main_layout.addWidget(key_label)
+        key_label.setFont(QFont("Consolas", 12))
+        self.sec_layout.addWidget(key_label)
 
         self.key_input = QLineEdit()
         self.key_input.setEchoMode(QLineEdit.EchoMode.PasswordEchoOnEdit)
         self.key_input.setPlaceholderText("Master key...")
-        self.key_input.setFont(QFont("Consolas", 14))
+        self.key_input.setFont(QFont("Consolas", 12))
         self.key_input.returnPressed.connect(lambda: try_unlock(self))
-        self.main_layout.addWidget(self.key_input)
+        self.sec_layout.addWidget(self.key_input)
 
         unlock_btn = QPushButton("Unlock")
-        unlock_btn.setFont(QFont("Consolas", 14))
+        unlock_btn.setFont(QFont("Consolas", 12))
         unlock_btn.clicked.connect(lambda: try_unlock(self))
-        self.main_layout.addWidget(unlock_btn)
+        self.sec_layout.addWidget(unlock_btn)
 
         self.error_label = QLabel("")
         self.error_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.error_label.setStyleSheet("color: #FF3333;")
         self.error_label.setFont(QFont("Consolas", 12))
-        self.main_layout.addWidget(self.error_label)
+        self.sec_layout.addWidget(self.error_label)
 
-        self.main_layout.addStretch()
+        self.sec_layout.addStretch()
         hotkey_label = QLabel("Press Ctrl+Alt+P to quickly access vault") 
-        hotkey_label.setFont(QFont("Consolas", 14))
+        hotkey_label.setFont(QFont("Consolas", 12))
         hotkey_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.main_layout.addWidget(hotkey_label)   
+        hotkey_label.setWordWrap(True)
+        self.sec_layout.addWidget(hotkey_label)
+        self.main_layout.addLayout(self.sec_layout)
 
-
-    def show_vault_table(self, entries):
+    def show_vault_table(self, entries, main_window):
+        self.entries = entries
         clear_layout(self.main_layout)
-
-        title = QLabel("Password Manager")
-        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        title.setFont(QFont("Consolas", 24, QFont.Weight.Bold))
-        self.main_layout.addWidget(title)
+        main_window.resize(VAULT_WINDOW_WIDTH, VAULT_WINDOW_HEIGHT)
+        self.main_layout.addSpacing(10)
+        subtitle_layout = QHBoxLayout()
+        back_btn = QPushButton()
+        back_btn.setIcon(QApplication.style().standardIcon(QStyle.StandardPixmap.SP_ArrowBack))
+        back_btn.setStyleSheet("color: #FFFFFF; background-color: #00FF00;")
+        back_btn.setIconSize(QSize(24, 24))
+        back_btn.setFixedSize(30, 30)
+        back_btn.clicked.connect(self.show_login_screen)
+        back_btn.setToolTip("Back to unlock screen")
+        subtitle_layout.addWidget(back_btn)
 
         subtitle = QLabel(f"{len(entries)} saved logins")
         subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
         subtitle.setFont(QFont("Consolas", 12))
-        self.main_layout.addWidget(subtitle)
+        subtitle_layout.addWidget(subtitle)
+
+        self.main_layout.addLayout(subtitle_layout)
 
         self.main_layout.addSpacing(10)
 
@@ -203,12 +252,44 @@ class MainView(QWidget):
             table.setItem(row, 2, QTableWidgetItem(entry["password"]))
 
         self.main_layout.addWidget(table)
+        if not self.bool:
+            lock_btn = QPushButton("add new login")
+            lock_btn.setFont(QFont("Consolas", 14))
+            lock_btn.clicked.connect(lambda: self.changeboolrebuild())
+            self.main_layout.addWidget(lock_btn)
+        else:
+            new_login_layout = QHBoxLayout()
+            self.domain_input = QLineEdit()
+            self.domain_input.setEchoMode(QLineEdit.EchoMode.Normal)
+            self.domain_input.setPlaceholderText("Domain")
+            self.domain_input.setFont(QFont("Consolas", 12))
+            new_login_layout.addWidget(self.domain_input)
 
-        lock_btn = QPushButton("Lock")
-        lock_btn.setFont(QFont("Consolas", 14))
-        lock_btn.clicked.connect(self.show_login_screen)
-        self.main_layout.addWidget(lock_btn)
-   
+            self.username_input = QLineEdit()
+            self.username_input.setEchoMode(QLineEdit.EchoMode.Normal)
+            self.username_input.setPlaceholderText("Username")
+            self.username_input.setFont(QFont("Consolas", 12))
+            new_login_layout.addWidget(self.username_input)
+
+            self.key_input = QLineEdit()
+            self.key_input.setEchoMode(QLineEdit.EchoMode.PasswordEchoOnEdit)
+            self.key_input.setPlaceholderText("Password")
+            self.key_input.setFont(QFont("Consolas", 12))
+            new_login_layout.addWidget(self.key_input)
+
+            add_btn = QPushButton("Add Login")
+            add_btn.setFont(QFont("Consolas", 12))
+            add_btn.clicked.connect(lambda: new_login(self))
+            new_login_layout.addWidget(add_btn)
+
+            self.main_layout.addLayout(new_login_layout)
+    def changeboolrebuild(self):       
+        self.bool=True
+        self.show_vault_table(self.entries,self.main_window)
+        
+
+
+
 
 
 
@@ -217,6 +298,7 @@ class hotkeyview(QWidget):
         super().__init__()
         self.domain = domain
         self.main_window = main_window
+        self.main_window.resize(LOGIN_WINDOW_WIDTH, LOGIN_WINDOW_HEIGHT)
         self.main_layout = QVBoxLayout(self)
         self.main_layout.setContentsMargins(30, 30, 30, 30)
         self.main_layout.setSpacing(15)

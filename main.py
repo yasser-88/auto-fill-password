@@ -6,20 +6,21 @@ from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, Q
 from PySide6.QtCore import QObject, Signal, Slot
 from pynput import keyboard
 import pyperclip
-from urllib.parse import urlparse
+from urllib.parse import urlparse as urllib_parse
 from crypto import load_vault
-from widgets import MainView ,hotkeyview , clear_layout , STYLESHEET , find_password_for_domain
+from widgets import MainView ,hotkeyview , clear_layout , STYLESHEET , find_password_for_domain, LOGIN_WINDOW_WIDTH, LOGIN_WINDOW_HEIGHT
 VAULT_FILE = "vault.json"
 # --- Simulated vault functions (replace with yours) ---
 def get_domain_from_clipboard():
     url = pyperclip.paste().strip()
 
     if url.startswith(("http://", "https://")):
-        return urlparse(url).netloc
+        return urllib_parse(url).netloc
     elif url:
         # If it doesn't have protocol, treat it as a domain directly
         # Remove any paths or query strings
-        domain = url.split('/')[0].split('?')[0]
+        domain = url.split('/')[0]
+        domain = domain.split('?')[0]
         return domain if domain else None
     return None
 
@@ -37,9 +38,9 @@ class MainWindow(QMainWindow):
         self.emitter = HotkeyEmitter()
         self.emitter.domain_detected.connect(self.show_unlock_popup)
         self.setWindowTitle("Password Manager")
-       
-        
-        self.setCentralWidget(MainView()) 
+        self.setMinimumSize(0, 0)  # Allow window to be any size
+        self.resize(LOGIN_WINDOW_WIDTH, LOGIN_WINDOW_HEIGHT)  # Set initial window size
+        self.setCentralWidget(MainView(self)) 
 
         # Unlock view (hidden by default)
         self.unlock_widget = None
