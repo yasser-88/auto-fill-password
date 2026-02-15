@@ -4,12 +4,23 @@ from time import sleep
 import pyperclip
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QApplication, QStyle,
-    QLabel, QLineEdit, QPushButton, QTableWidget, QTableWidgetItem,
+    QLabel, QLineEdit, QPushButton, QScrollArea, QFrame,
     QHeaderView, QMessageBox, QMainWindow
 )
 from PySide6.QtCore import Qt, QObject, Signal , QTimer,QSize
-from PySide6.QtGui import QFont, QIcon
+from PySide6.QtGui import QFont, QIcon, QPainter, QPixmap, QColor, QPen
 from crypto import load_vault ,create_vault
+
+def make_icon(text, color):
+    pixmap = QPixmap(24, 24)
+    pixmap.fill(Qt.GlobalColor.transparent)
+    painter = QPainter(pixmap)
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+    painter.setPen(QPen(QColor(color), 2))
+    painter.setFont(QFont("Segoe UI Symbol", 14))
+    painter.drawText(pixmap.rect(), Qt.AlignmentFlag.AlignCenter, text)
+    painter.end()
+    return QIcon(pixmap)
 
 
 
@@ -238,20 +249,63 @@ class MainView(QWidget):
 
         self.main_layout.addSpacing(10)
 
-        table = QTableWidget(len(entries), 3)
-        table.setHorizontalHeaderLabels(["URL / Domain", "Username", "Password"])
-        table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-        table.verticalHeader().setVisible(False)
-        table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
-        table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        table.setFont(QFont("Consolas", 12))
+        # Scrollable entry rows
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setStyleSheet("QScrollArea { border: none; }")
+        scroll_widget = QWidget()
+        scroll_layout = QVBoxLayout(scroll_widget)
+        scroll_layout.setContentsMargins(0, 0, 0, 0)
+        scroll_layout.setSpacing(0)
 
-        for row, entry in enumerate(entries):
-            table.setItem(row, 0, QTableWidgetItem(entry["domain"]))
-            table.setItem(row, 1, QTableWidgetItem(entry["username"]))
-            table.setItem(row, 2, QTableWidgetItem(entry["password"]))
+        for i, entry in enumerate(entries):
+            row_layout = QHBoxLayout()
+            row_layout.setContentsMargins(8, 6, 8, 6)
+            row_layout.setSpacing(10)
 
-        self.main_layout.addWidget(table)
+            domain_label = QLabel(entry.get("domain", ""))
+            domain_label.setFont(QFont("Consolas", 11))
+            row_layout.addWidget(domain_label)
+
+            username_label = QLabel(entry.get("username", ""))
+            username_label.setFont(QFont("Consolas", 11))
+            row_layout.addWidget(username_label)
+
+            password_label = QLabel(entry.get("password", ""))
+            password_label.setFont(QFont("Consolas", 11))
+            row_layout.addWidget(password_label)
+
+            edit_btn = QPushButton()
+            edit_btn.setIcon(make_icon("\u270E", "#00FF00"))
+            edit_btn.setIconSize(QSize(20, 20))
+            edit_btn.setToolTip("Edit")
+            edit_btn.setFixedSize(28, 28)
+            edit_btn.setStyleSheet("border: 1px solid #00FF00; background-color: #002200; border-radius: 4px;")
+            edit_btn.clicked.connect(lambda checked, idx=i: self.edit_entry(idx))
+            row_layout.addWidget(edit_btn)
+
+            remove_btn = QPushButton()
+            remove_btn.setIcon(make_icon("\u2716", "#FF3333"))
+            remove_btn.setIconSize(QSize(20, 20))
+            remove_btn.setToolTip("Remove")
+            remove_btn.setFixedSize(28, 28)
+            remove_btn.setStyleSheet("border: 1px solid #FF3333; background-color: #220000; border-radius: 4px;")
+            remove_btn.clicked.connect(lambda checked, idx=i: self.remove_entry(idx))
+            row_layout.addWidget(remove_btn)
+
+            scroll_layout.addLayout(row_layout)
+
+            # Divider line between entries
+            if i < len(entries) - 1:
+                line = QFrame()
+                line.setFrameShape(QFrame.Shape.HLine)
+                line.setStyleSheet("background-color: #00FF00;")
+                line.setFixedHeight(2)
+                scroll_layout.addWidget(line)
+
+        scroll_layout.addStretch()
+        scroll_area.setWidget(scroll_widget)
+        self.main_layout.addWidget(scroll_area)
         if not self.bool:
             lock_btn = QPushButton("add new login")
             lock_btn.setFont(QFont("Consolas", 14))
@@ -286,6 +340,104 @@ class MainView(QWidget):
     def changeboolrebuild(self):       
         self.bool=True
         self.show_vault_table(self.entries,self.main_window)
+
+    def edit_entry(self, index):
+        entry = self.entries[index]
+        self.bool = False
+        clear_layout(self.main_layout)
+        self.main_window.resize(VAULT_WINDOW_WIDTH, VAULT_WINDOW_HEIGHT)
+
+        title = QLabel(f"Editing: {entry.get('domain', '')}")
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        title.setFont(QFont("Consolas", 16, QFont.Weight.Bold))
+        self.main_layout.addWidget(title)
+        self.main_layout.addSpacing(15)
+
+        form_layout = QVBoxLayout()
+        form_layout.setContentsMargins(30, 10, 30, 10)
+        form_layout.setSpacing(10)
+
+        domain_label = QLabel("Domain:")
+        domain_label.setFont(QFont("Consolas", 12))
+        form_layout.addWidget(domain_label)
+        self.edit_domain = QLineEdit(entry.get("domain", ""))
+        self.edit_domain.setFont(QFont("Consolas", 12))
+        form_layout.addWidget(self.edit_domain)
+
+        username_label = QLabel("Username:")
+        username_label.setFont(QFont("Consolas", 12))
+        form_layout.addWidget(username_label)
+        self.edit_username = QLineEdit(entry.get("username", ""))
+        self.edit_username.setFont(QFont("Consolas", 12))
+        form_layout.addWidget(self.edit_username)
+
+        password_label = QLabel("Password:")
+        password_label.setFont(QFont("Consolas", 12))
+        form_layout.addWidget(password_label)
+        self.edit_password = QLineEdit(entry.get("password", ""))
+        self.edit_password.setFont(QFont("Consolas", 12))
+        form_layout.addWidget(self.edit_password)
+
+        self.main_layout.addLayout(form_layout)
+        self.main_layout.addSpacing(10)
+
+        btn_layout = QHBoxLayout()
+        save_btn = QPushButton("Save")
+        save_btn.setFont(QFont("Consolas", 12))
+        save_btn.clicked.connect(lambda: self.save_edit(index))
+        btn_layout.addWidget(save_btn)
+
+        cancel_btn = QPushButton("Cancel")
+        cancel_btn.setFont(QFont("Consolas", 12))
+        cancel_btn.clicked.connect(lambda: self.show_vault_table(self.entries, self.main_window))
+        btn_layout.addWidget(cancel_btn)
+        self.main_layout.addLayout(btn_layout)
+
+        self.error_label = QLabel("")
+        self.error_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.error_label.setStyleSheet("color: #FF3333;")
+        self.error_label.setFont(QFont("Consolas", 12))
+        self.main_layout.addWidget(self.error_label)
+        self.main_layout.addStretch()
+
+    def save_edit(self, index):
+        domain = self.edit_domain.text().strip()
+        username = self.edit_username.text().strip()
+        password = self.edit_password.text().strip()
+        if not domain or not password:
+            self.error_label.setText("Domain and password are required.")
+            return
+        self.entries[index] = {
+            "domain": domain,
+            "username": username if username else "--non added--",
+            "password": password
+        }
+        try:
+            vault_bytes = create_vault(self.master_key, self.entries)
+            with open(VAULT_FILE, "wb") as f:
+                f.write(vault_bytes)
+            print("✅ Entry updated!")
+        except Exception as e:
+            print(f"❌ Save failed: {e}")
+        self.show_vault_table(self.entries, self.main_window)
+
+    def remove_entry(self, index):
+        entry = self.entries[index]
+        reply = QMessageBox.question(
+            self, "Confirm Remove",
+            f"Remove login for '{entry.get('domain', '')}'?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        if reply == QMessageBox.StandardButton.Yes:
+            self.entries.pop(index)
+            try:
+                vault_bytes = create_vault(self.master_key, self.entries)
+                with open(VAULT_FILE, "wb") as f:
+                    f.write(vault_bytes)
+                print("✅ Entry removed!")
+            except Exception as e:
+                print(f"❌ Save failed: {e}")
+            self.show_vault_table(self.entries, self.main_window)
         
 
 

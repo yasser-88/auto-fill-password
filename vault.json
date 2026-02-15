@@ -1,36 +1,26 @@
 {
   "version": 1,
-  "salt": "8578fcac7ccfd0f84f2af50ca7a08ca6",
+  "salt": "ba0a0b1000bbf48adedb4b06fa1aebfe",
   "entries": [
     {
       "domain": "github.com",
       "username": "yamin",
-      "encrypted_password": "5bc301ed980d2d6fbf66f09fca3147ab1ed3abc985fb2e61e393814846a986c0e3917bd17c24eebef54a"
+      "encrypted_password": "a109dd696314928093ab6caadd56edd44e26cc65e2cc2f0e3ce42d671edf619d0e4ff3e161135b74e06c"
     },
     {
       "domain": "youtube.com",
       "username": "chowlaw",
-      "encrypted_password": "6b961de1b6b5ed1a5c6edae6f368696d5aa7653522fdba545048195a8949d72b54bde90f7bc6e201b844e3"
+      "encrypted_password": "5c4844276d4d177ecac164fbc0b66399d15f188e65058be1db59d4b1e24e3c33788ffc4a3347f536c8d690"
     },
     {
       "domain": "qwen.ai",
       "username": "abdellah",
-      "encrypted_password": "fb4a687eab1e1f9848e9ef00fc1c6a5ddc1438f973269ebaa619d9fa48b097a14d91"
+      "encrypted_password": "32fa3e5b3ce3febac9f2e891caa2eb07a5f14c349a078450a5357207a1f12d6428c7"
     },
     {
       "domain": "twitch",
       "username": "--non added--",
-      "encrypted_password": "3c984587a439d422d94803b7119c9f8f6d533bb1a990f0a09e3aefa5a03802"
-    },
-    {
-      "domain": "twitch",
-      "username": "--non added--",
-      "encrypted_password": "4e54849b294e3149094a82e1b880d342224a9c82290d13828af92b5ab770a1"
-    },
-    {
-      "domain": "him",
-      "username": "--non added--",
-      "encrypted_password": "011075ef4a64f67ebb6a041ef8c136226f330d66e790928ad1a6e17646d719"
+      "encrypted_password": "424fbf9e6ec245ac0a53a4cbda33388f30da81cdeffc38be23bdf6826b97aa"
     }
   ]
 }
