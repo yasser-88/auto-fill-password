@@ -11,6 +11,8 @@ from PySide6.QtCore import Qt, QObject, Signal , QTimer,QSize
 from PySide6.QtGui import QFont, QIcon, QPainter, QPixmap, QColor, QPen
 from crypto import load_vault ,create_vault
 
+VAULT_FILE = "vault.json"
+
 def make_icon(text, color):
     pixmap = QPixmap(24, 24)
     pixmap.fill(Qt.GlobalColor.transparent)
@@ -24,7 +26,7 @@ def make_icon(text, color):
 
 
 
-VAULT_FILE = "vault.json"
+
 # Window size constants
 LOGIN_WINDOW_WIDTH = 250
 LOGIN_WINDOW_HEIGHT = 350
@@ -94,7 +96,7 @@ def find_password_for_domain(domain, key: str):
     if os.path.exists(VAULT_FILE):
         with open(VAULT_FILE, "rb") as f:
             try:
-                entries = load_vault(f.read(), key)
+                entries = load_vault(key)
                 print(f"✅ Loaded {len(entries)} logins from '{VAULT_FILE}'")
             except Exception as e:
                 print(f"❌ Failed to load vault: {e}")
@@ -117,9 +119,10 @@ def try_unlock(self, domain=None):
 
     try:
         with open(VAULT_FILE, "rb") as f:
-            entries = load_vault(f.read(), self.master_key)
+            entries = load_vault(self.master_key)
         if (self.__class__.__name__=="MainView"):
             self.bool=False
+            self.master_key = self.master_key
             self.show_vault_table(entries,self.main_window)
         else:
             password = find_password_for_domain(domain, self.master_key)
@@ -160,10 +163,8 @@ def new_login(self):
         "password": password
     })
     try:
-        vault_bytes = create_vault(self.master_key, self.entries)
-        with open(VAULT_FILE, "wb") as f:
-            f.write(vault_bytes)
-            print("✅ Login saved!")
+        create_vault(self.master_key, self.entries)
+        print("✅ Login saved!")
     except Exception as e:
         print(f"❌ Save failed: {e}")
     self.bool=False
@@ -179,8 +180,13 @@ class MainView(QWidget):
         self.main_layout = QVBoxLayout(self)
         self.main_layout.setContentsMargins(4, 4, 4, 4)
         self.main_layout.setSpacing(15)
-        self.show_login_screen()
         self.bool=False
+        self.master_key = ""
+        if  os.path.exists("vault.json"):
+            self.show_login_screen()
+        else:
+            self.show_create_vault_screen()
+        
 
 
     def show_login_screen(self):
@@ -337,6 +343,62 @@ class MainView(QWidget):
             new_login_layout.addWidget(add_btn)
 
             self.main_layout.addLayout(new_login_layout)
+
+    def show_create_vault_screen(self):
+        clear_layout(self.main_layout)
+        self.main_window.resize(LOGIN_WINDOW_WIDTH, LOGIN_WINDOW_HEIGHT)
+        self.main_layout.addSpacing(20)
+        title = QLabel("No vault found. create a new one")
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        title.setFont(QFont("Consolas", 20, QFont.Weight.Bold))
+        title.setWordWrap(True)
+        self.main_layout.addWidget(title)
+        self.sec_layout = QVBoxLayout()
+        self.sec_layout.setContentsMargins(30, 30, 30, 15)
+        self.sec_layout.setSpacing(15)
+
+        key_label = QLabel("Enter the Master Key:")
+        key_label.setFont(QFont("Consolas", 12))
+        self.sec_layout.addWidget(key_label)
+
+        self.key_input = QLineEdit()
+        self.key_input.setEchoMode(QLineEdit.EchoMode.PasswordEchoOnEdit)
+        self.key_input.setPlaceholderText("Master key...")
+        self.key_input.setFont(QFont("Consolas", 12))
+        self.key_input.returnPressed.connect(lambda: self.create_vault_show_login())
+        self.sec_layout.addWidget(self.key_input)
+
+        unlock_btn = QPushButton("Unlock")
+        unlock_btn.setFont(QFont("Consolas", 12))
+        unlock_btn.clicked.connect(lambda: self.create_vault_show_login())
+        self.sec_layout.addWidget(unlock_btn)
+
+        self.error_label = QLabel("remember this key, it cannot be recovered!")
+        self.error_label.setWordWrap(True)
+        self.error_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.error_label.setStyleSheet("color: #FF3333;")
+        self.error_label.setFont(QFont("Consolas", 12))
+        self.sec_layout.addWidget(self.error_label)
+        self.main_layout.addLayout(self.sec_layout)
+
+        self.sec_layout.addStretch()
+
+    def create_vault_show_login(self):
+        master_key = self.key_input.text().strip()
+        if not master_key:
+            self.error_label.setText("Please enter a key.")
+            return
+        try:
+            create_vault(master_key, [])
+
+            print("✅ Vault created!")
+            self.show_vault_table([], self.main_window)
+        except Exception as e:
+            print(f"❌ Vault creation failed: {e}")
+            self.error_label.setText("Failed to create vault. Try again.")
+
+
+
     def changeboolrebuild(self):       
         self.bool=True
         self.show_vault_table(self.entries,self.main_window)
@@ -413,10 +475,7 @@ class MainView(QWidget):
             "password": password
         }
         try:
-            vault_bytes = create_vault(self.master_key, self.entries)
-            with open(VAULT_FILE, "wb") as f:
-                f.write(vault_bytes)
-            print("✅ Entry updated!")
+            create_vault(self.master_key, self.entries)
         except Exception as e:
             print(f"❌ Save failed: {e}")
         self.show_vault_table(self.entries, self.main_window)
@@ -431,10 +490,7 @@ class MainView(QWidget):
         if reply == QMessageBox.StandardButton.Yes:
             self.entries.pop(index)
             try:
-                vault_bytes = create_vault(self.master_key, self.entries)
-                with open(VAULT_FILE, "wb") as f:
-                    f.write(vault_bytes)
-                print("✅ Entry removed!")
+                create_vault(self.master_key, self.entries)
             except Exception as e:
                 print(f"❌ Save failed: {e}")
             self.show_vault_table(self.entries, self.main_window)
