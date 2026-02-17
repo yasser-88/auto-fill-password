@@ -42,21 +42,28 @@ def create_vault(master_password: str, entries: list) :
             "Delete it first if you want to create a new one."
         )
     
+    _write_vault(master_password, entries)
+
+
+def _write_vault(master_password: str, entries: list):
+    """Internal: encrypt entries and write the vault file."""
     try:
         salt = os.urandom(16)
         key = derive_key(master_password, salt)
 
         encrypted_entries = []
         for entry in entries:
+            encrypted_domain = encrypt_data(entry['domain'], key)
+            encrypted_user = encrypt_data(entry['username'], key)
             encrypted_pass = encrypt_data(entry['password'], key)
             encrypted_entries.append({
-                'domain': entry['domain'],
-                'username': entry['username'],
+                'encrypted_domain': encrypted_domain.hex(),
+                'encrypted_username': encrypted_user.hex(),
                 'encrypted_password': encrypted_pass.hex()
             })
 
         vault = {
-            'version': 1,
+            'version': 2,
             'salt': salt.hex(),
             'entries': encrypted_entries
         }
@@ -84,14 +91,25 @@ def load_vault(master_password: str) -> list:
     salt = bytes.fromhex(vault['salt'])
     key = derive_key(master_password, salt)
 
+    version = vault.get('version', 1)
     entries = []
     for item in vault['entries']:
         encrypted_pass = bytes.fromhex(item['encrypted_password'])
         password = decrypt_data(encrypted_pass, key)
+
+        if version >= 2:
+            domain = decrypt_data(bytes.fromhex(item['encrypted_domain']), key)
+            username = decrypt_data(bytes.fromhex(item['encrypted_username']), key)
+        else:
+            # Legacy v1 format: domain/username stored in plaintext
+            domain = item['domain']
+            username = item['username']
+
         entries.append({
-            'domain': item['domain'],
-            'username': item['username'],
+            'domain': domain,
+            'username': username,
             'password': password
         })
+        print(f"loaded here ")
     return entries
 
