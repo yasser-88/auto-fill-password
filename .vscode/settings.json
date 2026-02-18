@@ -1,5 +1,0 @@
-{
-    "python.defaultInterpreterPath": "./venv/bin/python",  // Adjust path as needed
-    "python.analysis.extraPaths": ["./your_custom_modules"],
-    "python.analysis.diagnosticMode": "workspace"
-}
