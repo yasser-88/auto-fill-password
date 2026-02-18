@@ -4,7 +4,7 @@ import os
 import threading
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton
 from PySide6.QtCore import QObject, Signal, Slot
-from PySide6.QtGui import QIcon, QPixmap, QPainter, QColor, QFont, QPen, Qt
+from PySide6.QtGui import QIcon
 from pynput import keyboard
 import pyperclip
 from urllib.parse import urlparse as urllib_parse
@@ -12,6 +12,8 @@ from crypto import load_vault
 from widgets import MainView, hotkeyview
 from helpers import STYLESHEET, LOGIN_WINDOW_WIDTH, LOGIN_WINDOW_HEIGHT
 import ctypes
+import pystray
+from PIL import Image
 ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("passwordmanager.app.1")
 
 VAULT_FILE = "vault.json"
@@ -33,6 +35,8 @@ def get_domain_from_clipboard():
 # --- Custom Signal Emitter (for thread safety) ---
 class HotkeyEmitter(QObject):
     domain_detected = Signal(str)  # Emits domain string
+    restore_requested = Signal()   # Emits when tray "Open" is clicked
+    quit_requested = Signal()      # Emits when tray "Quit" is clicked
 
 # --- Main Window ---
 class MainWindow(QMainWindow):
@@ -40,8 +44,11 @@ class MainWindow(QMainWindow):
         super().__init__()  # ✅ FIXED: was _init_
         self.emitter = HotkeyEmitter()
         self.emitter.domain_detected.connect(self.show_unlock_popup)
+        self.emitter.restore_requested.connect(self._do_restore)
+        self.emitter.quit_requested.connect(self._do_quit)
         self.setWindowTitle("Password Manager")
-        self.setWindowIcon(self._make_lock_icon())
+        icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "icon.png")
+        self.setWindowIcon(QIcon(icon_path))
         self.setMinimumSize(0, 0)  # Allow window to be any size
         self.resize(LOGIN_WINDOW_WIDTH, LOGIN_WINDOW_HEIGHT)  # Set initial window size
         self.setCentralWidget(MainView(self)) 
@@ -49,27 +56,48 @@ class MainWindow(QMainWindow):
         # Unlock view (hidden by default)
         self.unlock_widget = None
         self.previous_widget = None  # ✅ Added to avoid AttributeError
+        self._tray_icon = None
 
-    @staticmethod
-    def _make_lock_icon():
-        pixmap = QPixmap(64, 64)
-        pixmap.fill(QColor("#000000"))
-        p = QPainter(pixmap)
-        p.setRenderHint(QPainter.RenderHint.Antialiasing)
-        pen = QPen(QColor("#00FF00"), 4)
-        p.setPen(pen)
-        p.setBrush(QColor(0, 0, 0, 0))
-        # Draw the shackle (arc at top)
-        p.drawArc(16, 6, 32, 32, 0, 180 * 16)
-        # Draw the body (filled rectangle)
-        p.setBrush(QColor("#00FF00"))
-        p.drawRoundedRect(10, 28, 44, 30, 4, 4)
-        # Draw keyhole (black circle)
-        p.setBrush(QColor("#000000"))
-        p.setPen(QPen(QColor("#000000"), 1))
-        p.drawEllipse(26, 36, 12, 12)
-        p.end()
-        return QIcon(pixmap)
+    def minimize_to_tray(self):
+        """Hide the window and show a system tray icon using pystray."""
+        self.hide()
+        icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "icon.png")
+        image = Image.open(icon_path)
+        menu = pystray.Menu(
+            pystray.MenuItem("Open", self._restore_from_tray, default=True),
+            pystray.MenuItem("Quit", self._quit_from_tray),
+        )
+        self._tray_icon = pystray.Icon("PasswordManager", image, "Password Manager", menu)
+        threading.Thread(target=self._tray_icon.run, daemon=True).start()
+
+    def _restore_from_tray(self, icon=None, item=None):
+        """Called from pystray thread — emit signal to main thread."""
+        self.emitter.restore_requested.emit()
+
+    def _quit_from_tray(self, icon=None, item=None):
+        """Called from pystray thread — emit signal to main thread."""
+        self.emitter.quit_requested.emit()
+
+    @Slot()
+    def _do_restore(self):
+        """Restore the window (runs on main thread)."""
+        if self._tray_icon:
+            self._tray_icon.stop()
+            self._tray_icon = None
+        self.setCentralWidget(MainView(self))
+        self.setMinimumSize(0, 0)
+        self.setMaximumSize(16777215, 16777215)
+        self.resize(LOGIN_WINDOW_WIDTH, LOGIN_WINDOW_HEIGHT)
+        self.showNormal()
+        self.activateWindow()
+
+    @Slot()
+    def _do_quit(self):
+        """Quit the app (runs on main thread)."""
+        if self._tray_icon:
+            self._tray_icon.stop()
+            self._tray_icon = None
+        QApplication.quit()
 
     @Slot(str)
     def show_unlock_popup(self, domain):

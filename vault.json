@@ -1,26 +1,26 @@
 {
   "version": 2,
-  "salt": "321f9b57974085e285bfb75cfac00460",
+  "salt": "038db2b1d24a7e68d25f35beee8c3f1b",
   "entries": [
     {
-      "encrypted_domain": "c8a487f97d6d8dcfbf9230b75b386e2bf97ebfc4b0fa2caa9997859860a8b3c6f6ac97bfda73",
-      "encrypted_username": "61fbb349e62e4b317fd65a33ff0ecf8d821646643bbe4811740d2723fe9ff9b6de",
-      "encrypted_password": "a963b5dfba3e1a63030aef186afa2e2fefb6a6e0a914ad0d601864bb2e4d20d4dca246b03a9cb12d0b85"
+      "encrypted_domain": "c72363ed1e8d8106426e122f84669a02c353bc51cab2e48cf604e1b443bc9161c18ea88b6d5c",
+      "encrypted_username": "4dfd9cc050fd6b514dbe20b08ed0d1eb47b4193f186ba5255d9e594d269a75e4bd",
+      "encrypted_password": "0fcdb71cc6e43d1dfea10478a79faf988a60cda927eba9e30496ea06336eb83641b78cff2453be1c1386"
     },
     {
-      "encrypted_domain": "8ff6aa185aad2344a84423bcd2d8d22d554093ac1d678ca786a56ad9a677ccfd485f780d700988",
-      "encrypted_username": "761245b0fa60ad89688ac3855d863176e0a40534ff33e478fc770dab78681f10cd63aa",
-      "encrypted_password": "8cdf38c708bc020a0f18e2fa6134d6d1be921bca9ce303e95cb3c60135c1db27228ba11ad9300e451d243b"
+      "encrypted_domain": "10e7ddc6e2a7230d390d920fe7b9fba8a90c083379739dd0be1f1b1a4dfd72664f1f7a317e71bc",
+      "encrypted_username": "6bd89ba785c074d8cca0dde31bff1e4e527e1e17e5ee1d9933c668d1dd3c5f4a3b1d43",
+      "encrypted_password": "0767ed1d7ff062d3270d0cad42969ce514ccef6cc59b21a600f59d42a6cd2f8dea312a21422d2084e946ef"
     },
     {
-      "encrypted_domain": "393b34226182a8f4a0c1698d3aaed9b297646ad7a7160be2b7560b8775ab4f4f5b529d",
-      "encrypted_username": "676bbdbabcff45fd56678afb032fd07ae2ba993eab69fb9583771c76cfba9639cc5f1fb5",
-      "encrypted_password": "31b592fd9ffc11e255f1be90fb43908a2aecbc8cb137fa986f171e4493bfe1bf1b5f"
+      "encrypted_domain": "a2d472ebb98bd8a0623b0d7eb30348e6a0b60ffa89f637d417c33c6767ce476aacdbd0",
+      "encrypted_username": "01bf73017704a6adf6f2b5c0107c3e94be321d4a1ebd833369382bb0ced2243c3821edca",
+      "encrypted_password": "4bbdb86bf3f0e1512964365c5d9ab532ffbfcb5827496ad52cbccd93cf5d3192d17d"
     },
     {
-      "encrypted_domain": "d982f590733580894ee1fa849878e1f06d8bfb6224894927037e1e211a37c865729487a7cfb8e3693c",
-      "encrypted_username": "cce39cd3cf3543ccea2ceb6b56c320583bff7d8cce018ccf81055afd99e253bc98c3dfe61b83f9dddc",
-      "encrypted_password": "2042bd6a74dd18aaf23aba467d464ce9a1125c7de82da364b71f07b2d8cd1ce2f165"
+      "encrypted_domain": "68fd076c890546642655e076848d93a6053155b085eaff9890ac69827c67963dd5",
+      "encrypted_username": "da62f059cea4571d8a23d4e6ebe9fb7235de9f31193865224a5ea4d798c8e495dd9655213b0d6db224",
+      "encrypted_password": "c9b6cd80fac2db3dd39ec2453d6d29925045c740aa6e2c342998a3f15ed5"
     }
   ]
 }

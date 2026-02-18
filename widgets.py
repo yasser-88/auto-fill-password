@@ -329,6 +329,7 @@ class hotkeyview(QWidget):
         self.main_layout.addWidget(self.error_label)
 
         self.main_layout.addStretch()
+        self.key_input.setFocus()
 
     def show_add_new_login(self,entries):
         """Show the edit screen for a new vault entry from hotkey."""
@@ -370,7 +371,7 @@ class hotkeyview(QWidget):
         print(f"length {self.main_window.sizeHint().height()}")
 
     def _cancel_to_main(self):
-        """Return to main view and restore the original window size."""
+        """Return to main view and restore the original window size.ai +"""
         view = MainView(self.main_window)
         self.main_window.setCentralWidget(view)
         self.main_window.setMinimumSize(0, 0)
@@ -397,4 +398,4 @@ class hotkeyview(QWidget):
         print(f"\u2705 Saved password for {domain}!")
         clear_layout(self.main_layout)
         self.main_layout.addWidget(make_label(f"\u2705 Password for {domain} is saved!", size=24, bold=True, align_center=True))
-        QTimer.singleShot(2000, lambda: self.main_window.setCentralWidget(MainView(self.main_window)))
+        QTimer.singleShot(2000, lambda: self.main_window.minimize_to_tray())

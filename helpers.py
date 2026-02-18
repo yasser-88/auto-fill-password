@@ -5,6 +5,7 @@ import pyperclip
 from PySide6.QtWidgets import QLabel, QLineEdit, QPushButton, QVBoxLayout, QHBoxLayout
 from PySide6.QtCore import Qt, QSize, QTimer
 from PySide6.QtGui import QFont, QIcon, QPainter, QPixmap, QColor, QPen
+
 from crypto import load_vault, _write_vault
 
 VAULT_FILE = "vault.json"
@@ -21,6 +22,7 @@ MAX_UNLOCK_ATTEMPTS = 5
 LOCKOUT_SECONDS = 30
 _unlock_attempts = 0
 _locked_until = 0.0  # timestamp
+
 
 STYLESHEET = """
     QMainWindow, QWidget {
@@ -109,10 +111,9 @@ def clear_layout(layout):
 
 def find_password_for_domain(domain, entries):
     for entry in entries:
-        if entry.get("domain", "").lower() == domain.lower() and entry.get("password"):
+        if entry.get("domain") == domain and entry.get("password"):
             return entry.get("password")
-    print(f"the domain '{domain}' is not found in the vault")
-    print(f"  vault domains: {[e.get('domain') for e in entries]}")
+    print("the domain is not found in the vault")
     return None
 
 
@@ -166,7 +167,7 @@ def try_unlock(self, domain=None):
                 print(f"\u2705 Copied password for {domain}!")
                 clear_layout(self.main_layout)
                 self.main_layout.addWidget(make_label(f"\u2705 Password for {domain} copied to clipboard!", size=24, bold=True, align_center=True))
-                QTimer.singleShot(2000, lambda: self.main_window.setCentralWidget(MainView(self.main_window)))
+                QTimer.singleShot(2000, lambda: self.main_window.minimize_to_tray())
             else:
                 print("\u274c No password found.")
                 self.entries = entries
