@@ -1,36 +1,16 @@
-# Virtual environments
-venv/
-env/
-ENV/
-.venv/
-.env/
-
-# IDE / Editor settings
-.vscode/
-.idea/
-*.swp
-*.swo
-
 # Python
 __pycache__/
-*.pyc
+*.py[cod]
 *.pyo
-*.pyd
-.Python
-.ipynb_checkpoints
+*.egg-info/
+dist/
+build/
 
-# Configuration files (add your specific files)
-settings.json
-config.json
-.env
-secrets.json
+# Virtual environment
+venv/
+
+# IDE
+.vscode/
+
+# Sensitive data
 vault.json
-
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
