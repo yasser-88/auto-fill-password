@@ -3,7 +3,7 @@ import sys
 import os
 import threading
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton
-from PySide6.QtCore import QObject, Signal, Slot
+from PySide6.QtCore import QObject, Signal, Slot, QEvent
 from PySide6.QtGui import QIcon
 from pynput import keyboard
 import pyperclip
@@ -53,6 +53,32 @@ class MainWindow(QMainWindow):
         self.previous_widget = None
         self._tray_icon = None
 
+    def _bring_to_front(self):
+        self.setWindowFlags(self.windowFlags() | self.windowFlags())
+        self.showNormal()
+        self.raise_()
+        self.activateWindow()
+        if sys.platform == "win32":
+            user32 = ctypes.windll.user32
+            kernel32 = ctypes.windll.kernel32
+            hwnd = int(self.winId())
+            foreground_hwnd = user32.GetForegroundWindow()
+            foreground_tid = user32.GetWindowThreadProcessId(foreground_hwnd, None)
+            current_tid = kernel32.GetCurrentThreadId()
+            if foreground_tid != current_tid:
+                user32.AttachThreadInput(foreground_tid, current_tid, True)
+            user32.SetForegroundWindow(hwnd)
+            user32.BringWindowToTop(hwnd)
+            if foreground_tid != current_tid:
+                user32.AttachThreadInput(foreground_tid, current_tid, False)
+
+    def changeEvent(self, event):
+        if event.type() == QEvent.WindowStateChange and self.isMinimized():
+            event.ignore()
+            self.minimize_to_tray()
+            return
+        super().changeEvent(event)
+
     def minimize_to_tray(self):
         self.hide()
         icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "icon.png")
@@ -79,8 +105,7 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(0, 0)
         self.setMaximumSize(16777215, 16777215)
         self.resize(LOGIN_WINDOW_WIDTH, LOGIN_WINDOW_HEIGHT)
-        self.showNormal()
-        self.activateWindow()
+        self._bring_to_front()
 
     @Slot()
     def _do_quit(self):
@@ -91,7 +116,12 @@ class MainWindow(QMainWindow):
 
     @Slot(str)
     def show_unlock_popup(self, domain):
+        if self._tray_icon:
+            self._tray_icon.stop()
+            self._tray_icon = None
         self.setCentralWidget(hotkeyview(domain, self))
+        self.resize(LOGIN_WINDOW_WIDTH, LOGIN_WINDOW_HEIGHT)
+        self._bring_to_front()
         
 def start_hotkey_listener(emitter):
     def on_activate():
