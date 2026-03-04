@@ -2,6 +2,7 @@
 import os
 import time
 import pyperclip
+from urllib.parse import urlparse
 from PySide6.QtWidgets import QLabel, QLineEdit, QPushButton, QVBoxLayout, QHBoxLayout
 from PySide6.QtCore import Qt, QSize, QTimer
 from PySide6.QtGui import QFont, QIcon, QPainter, QPixmap, QColor, QPen
@@ -17,7 +18,25 @@ VAULT_WINDOW_HEIGHT = 400
 MAX_UNLOCK_ATTEMPTS = 5
 LOCKOUT_SECONDS = 30
 _unlock_attempts = 0
-_locked_until = 0.0  # timestamp
+_locked_until = 0.0
+
+def get_domain_from_url(url: str):
+    if not url or not isinstance(url, str):
+        return None
+    
+    url = url.strip()
+    
+    if url.startswith(("http://", "https://")):
+        hostname = urlparse(url).netloc.lower()
+    elif url:
+        hostname = url.split('/')[0].split('?')[0].lower()
+    else:
+        return None
+    
+    hostname = hostname.removeprefix("www.")
+    hostname = hostname.split(':')[0]
+    
+    return hostname if hostname else None
 
 
 STYLESHEET = """
@@ -72,7 +91,7 @@ STYLESHEET = """
 """
 
 
-def check_password_strength(password: str) -> str | None:
+def check_password_strength(password: str):
     if len(password) < 8:
         return "Master key must be at least 8 characters."
     has_upper = any(c.isupper() for c in password)
@@ -111,7 +130,7 @@ def find_password_for_domain(domain, entries):
     return None
 
 
-def check_rate_limit() -> str | None:
+def check_rate_limit():
     now = time.time()
     if now < _locked_until:
         remaining = int(_locked_until - now)
@@ -119,7 +138,7 @@ def check_rate_limit() -> str | None:
     return None
 
 
-def record_failed_attempt() -> str:
+def record_failed_attempt():
     global _unlock_attempts, _locked_until
     _unlock_attempts += 1
     remaining = MAX_UNLOCK_ATTEMPTS - _unlock_attempts

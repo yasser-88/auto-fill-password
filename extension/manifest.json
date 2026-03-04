@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "Secure Vault Fill",
+  "version": "3.2",
+  "description": "Auto-fill passwords from local Python app",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "clipboardWrite"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1:5000/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "icon.png"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+}

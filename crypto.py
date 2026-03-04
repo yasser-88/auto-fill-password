@@ -29,8 +29,7 @@ def decrypt_data(encrypted_data: bytes, key: bytes) -> str:
     plaintext = aesgcm.decrypt(nonce, ciphertext, None)
     return plaintext.decode('utf-8')
 
-def create_vault(master_password: str, entries: list) :
-    
+def create_vault(master_password: str, entries: list):
     if os.path.exists(VAULT_FILE):
         raise FileExistsError(
             f"Vault file '{VAULT_FILE}' already exists! "

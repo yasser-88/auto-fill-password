@@ -6,28 +6,17 @@ from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, Q
 from PySide6.QtCore import QObject, Signal, Slot, QEvent
 from PySide6.QtGui import QIcon
 from pynput import keyboard
-import pyperclip
-from urllib.parse import urlparse as urllib_parse
 from crypto import load_vault
 from widgets import MainView, hotkeyview
-from helpers import STYLESHEET, LOGIN_WINDOW_WIDTH, LOGIN_WINDOW_HEIGHT
+from helpers import STYLESHEET, LOGIN_WINDOW_WIDTH, LOGIN_WINDOW_HEIGHT, get_domain_from_url
 import ctypes
 import pystray
+import pyperclip
 from PIL import Image
+from server import run_server
 
 if sys.platform == "win32":
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("passwordmanager.app.1")
-
-def get_domain_from_clipboard():
-    url = pyperclip.paste().strip()
-
-    if url.startswith(("http://", "https://")):
-        return urllib_parse(url).netloc
-    elif url:
-        domain = url.split('/')[0] 
-        domain = domain.split('?')[0]
-        return domain if domain else None
-    return None
 
 
 class HotkeyEmitter(QObject):
@@ -125,7 +114,8 @@ class MainWindow(QMainWindow):
         
 def start_hotkey_listener(emitter):
     def on_activate():
-        domain = get_domain_from_clipboard()
+        
+        domain = get_domain_from_url(pyperclip.paste().strip())
         if domain:
             emitter.domain_detected.emit(domain)
 
@@ -143,6 +133,11 @@ if __name__ == "__main__":
     threading.Thread(
         target=start_hotkey_listener,
         args=(emitter,),
+        daemon=True
+    ).start()
+
+    threading.Thread(
+        target=run_server,
         daemon=True
     ).start()
     
