@@ -26,7 +26,7 @@ chrome extension:
 
 ## What I learned
 
-started this to learn encryption/decryption and ended up adding new functionalites and learning throught:
+started this to learn encryption/decryption and ended up adding new functionalites and learning through out:
 - pyside6 GUI with system tray and global hotkeys
 - connecting python with chrome extension through fastapi
 - chrome extension structure (content/background scripts communication)
@@ -36,9 +36,9 @@ started this to learn encryption/decryption and ended up adding new functionalit
 
 - main.py - desktop app
 - server.py - api server
-- crypto.py - encryption stuff
-- helpers.py - utilities
-- widgets.py - gui parts
+- crypto.py - encryption functions
+- helpers.py - infos and functions used throught the project
+- widgets.py - gui widgets
 - extension/ - chrome extension
 - vault.json - where credentials get stored
 
